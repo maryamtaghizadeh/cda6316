@@ -13,13 +13,7 @@ void setup()
   // Turn on the blacklight
   lcd.setBacklight((uint8_t)1);
 
-  // First row
-  // TODO: Create more meaningful prompt
-  lcd.print("Enter your age:");
 
-  // Second row
-  lcd.setCursor(0,1);
-  lcd.print("Embedded Systems");
 }
 #include <Keypad.h>
 
@@ -54,7 +48,13 @@ void reset_age(char* arr)
 void loop(){
 
   if (AGE_SETUP == 1){
+  // First row
+  // TODO: Create more meaningful prompt
+  lcd.print("Enter your age:");
 
+  // Second row
+  lcd.setCursor(0,1);
+  lcd.print("Embedded Systems");
   char current_key = customKeypad.getKey();
 
   if (current_key){
@@ -68,8 +68,9 @@ void loop(){
       age[0] = current_key;
     }
   }
+  } else {
+    lcd.setCursor(0,0);
+    lcd.print((String) "Age:          " + age);
+    delay(100);
   }
-  lcd.setCursor(0,0);
-  lcd.print((String) "Age: " + age);
-  delay(100);
 }
