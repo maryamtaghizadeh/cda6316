@@ -70,7 +70,7 @@ void loop(){
   }
   } else {
     lcd.setCursor(0,0);
-    lcd.print((String) "Age:          " + age);
+    lcd.print((String) "Age: " + age + "         ");
     delay(100);
   }
 }
