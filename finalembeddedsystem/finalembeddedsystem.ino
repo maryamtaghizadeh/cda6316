@@ -44,6 +44,8 @@ byte colPins[COLS] = {16, 4, 0, 2};
 /* initialize an instance of class NewKeypad */
 Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
 
+int AGE_SETUP = 1;
+
 void reset_age(char* arr)
 {
   strcpy(arr, "aa");
@@ -51,16 +53,23 @@ void reset_age(char* arr)
 
 void loop(){
 
+  if (AGE_SETUP == 1){
+
   char current_key = customKeypad.getKey();
 
   if (current_key){
     if (age[0] != 'a' and age[1] != 'a'){
       Serial.println((String) "Age is set to: " + age);
-      reset_age(age);
+      AGE_SETUP = 0;
+      // reset_age(age);
     } else if (age[0] != 'a'){
       age[1] = current_key;
     } else {
       age[0] = current_key;
     }
   }
+  }
+  lcd.setCursor(0,0);
+  lcd.print((String) "Age: " + age);
+  delay(100);
 }
