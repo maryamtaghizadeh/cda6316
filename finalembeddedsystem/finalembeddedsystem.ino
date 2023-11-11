@@ -1,8 +1,12 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include "MAX30105.h"
 
 // Set the LCD address to 0x27 for a 16 chars and 2 line display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+MAX30105 particleSensor;
 
 void setup()
 {
@@ -10,10 +14,20 @@ void setup()
   lcd.begin();
   Serial.begin(115200);
 
+  /***************** LCD ********************/
   // Turn on the blacklight
   lcd.setBacklight((uint8_t)1);
+  /***************** LCD ********************/
 
 
+  /***************** Red + IR ********************/
+	// Initialize sensor
+	if (particleSensor.begin() == false) {
+		Serial.println("MAX30102 was not found. Please check wiring/power.");
+		while (1);
+	}
+	particleSensor.setup(); //Configure sensor. Use 6.4mA for LED drive
+  /***************** Red + IR ********************/
 }
 #include <Keypad.h>
 
@@ -28,8 +42,8 @@ char hexaKeys[ROWS][COLS] = {
 };
 
 char age[3] = "aa";
-char child_pulse_range[16] = "max 75-115 BPM";
-char adult_pulse_range[16] = "max 60-100 BPM";
+char child_pulse_range[16] = "/75-115 BPM";
+char adult_pulse_range[16] = "/60-100 BPM";
 
 // byte rowPins[ROWS] = {13, 12, 14, 27}; /* connect to the row pinouts of the keypad */
 // byte colPins[COLS] = {26, 25, 33, 32}; /* connect to the column pinouts of the keypad */
@@ -82,4 +96,13 @@ void loop(){
       lcd.print(adult_pulse_range);
     }
   }
+
+  if (CHECK_PULSE = 1){
+    
+  }
+  Serial.print(" R[");
+	Serial.print(particleSensor.getRed());
+	Serial.print("] IR[");
+	Serial.print(particleSensor.getIR());
+	Serial.println("]");
 }
