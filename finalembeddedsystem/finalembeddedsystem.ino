@@ -28,6 +28,8 @@ char hexaKeys[ROWS][COLS] = {
 };
 
 char age[3] = "aa";
+char child_pulse_range[16] = "max 75-115 BPM";
+char adult_pulse_range[16] = "max 60-100 BPM";
 
 // byte rowPins[ROWS] = {13, 12, 14, 27}; /* connect to the row pinouts of the keypad */
 // byte colPins[COLS] = {26, 25, 33, 32}; /* connect to the column pinouts of the keypad */
@@ -39,6 +41,7 @@ byte colPins[COLS] = {16, 4, 0, 2};
 Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
 
 int AGE_SETUP = 1;
+int CHECK_PULSE = 0;
 
 void reset_age(char* arr)
 {
@@ -61,6 +64,7 @@ void loop(){
     if (age[0] != 'a' and age[1] != 'a'){
       Serial.println((String) "Age is set to: " + age);
       AGE_SETUP = 0;
+      CHECK_PULSE = 1;
       // reset_age(age);
     } else if (age[0] != 'a'){
       age[1] = current_key;
@@ -71,6 +75,11 @@ void loop(){
   } else {
     lcd.setCursor(0,0);
     lcd.print((String) "Age: " + age + "         ");
-    delay(100);
+    lcd.setCursor(0,1);
+    if (String(age).toInt() <  10){
+      lcd.print(child_pulse_range);
+    } else {
+      lcd.print(adult_pulse_range);
+    }
   }
 }
