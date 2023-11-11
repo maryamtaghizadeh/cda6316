@@ -17,6 +17,7 @@ byte rateSpot = 0;
 long lastBeat = 0; //Time at which the last beat occurred
 float beatsPerMinute;
 int beatAvg;
+int hrToLCD = 0;
 /***************** HEART RATE ********************/
 
 void setup()
@@ -24,14 +25,22 @@ void setup()
   Serial.begin(115200);
 
   /***************** LCD ********************/
-  // initialize the LCD
-  lcd.begin();
+  // enable_LCD();
   // Turn on the blacklight
-  lcd.setBacklight((uint8_t)1);
+  // lcd.setBacklight((uint8_t)1);
   /***************** LCD ********************/
 
 
   /***************** HEART RATE ********************/
+  enable_HR();
+
+  particleSensor.setup(); //Configure sensor with default settings
+  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
+  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
+  /***************** HEART RATE ********************/
+}
+
+void enable_HR(){
   // Initialize sensor
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
   {
@@ -39,12 +48,21 @@ void setup()
     while (1);
   }
   Serial.println("Place your index finger on the sensor with steady pressure.");
-
-  particleSensor.setup(); //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
-  /***************** HEART RATE ********************/
 }
+
+void disable_HR(){
+  particleSensor.shutDown();
+}
+
+void enable_LCD(){
+  // initialize the LCD
+  lcd.begin();
+}
+
+void disable_LCD(){
+  // lcd.stop();
+}
+
 #include <Keypad.h>
 
 const byte ROWS = 4; /* four rows */
@@ -83,11 +101,12 @@ void loop(){
   if (AGE_SETUP == 1){
   // First row
   // TODO: Create more meaningful prompt
-  lcd.print("Enter your age:");
+  // lcd.print("Enter your age:");
+  Serial.println("Enter your age:");
 
   // Second row
-  lcd.setCursor(0,1);
-  lcd.print("Embedded Systems");
+  // lcd.setCursor(0,1);
+  // lcd.print("Embedded Systems");
   char current_key = customKeypad.getKey();
 
   if (current_key){
@@ -103,13 +122,14 @@ void loop(){
     }
   }
   } else {
-    lcd.setCursor(0,0);
-    lcd.print((String) "Age: " + age + "         ");
-    lcd.setCursor(0,1);
-    lcd.print("Use HR Sensor");
+    // lcd.setCursor(0,0);
+    // lcd.print((String) "Age: " + age + "         ");
+    // lcd.setCursor(0,1);
+    // lcd.print("Use HR Sensor.   ");
+    Serial.print((String) "Age: " + age);
   }
 
-  if (CHECK_PULSE = 1){
+  if (CHECK_PULSE == 1){
     long irValue = particleSensor.getIR();
 
     if (checkForBeat(irValue) == true)
@@ -131,9 +151,15 @@ void loop(){
           beatAvg += rates[x];
         beatAvg /= RATE_SIZE;
       }
+      hrToLCD += 1;
     }
-    lcd.setCursor(0,1);
-    lcd.print((String) beatAvg + child_pulse_range);
+    // if (hrToLCD >= 10) {
+    //   // lcd.setCursor(0,1);
+    //   // lcd.print((String) beatAvg + child_pulse_range);
+    //   Serial.print((String) beatAvg + child_pulse_range);
+    //   hrToLCD = 0;
+    // }
+
     Serial.print("IR=");
     Serial.print(irValue);
     Serial.print(", BPM=");
