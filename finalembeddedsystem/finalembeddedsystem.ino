@@ -170,9 +170,9 @@ void loop(){
 
     if (irValue > 50000){
       lcd.setCursor(0,0);
-      lcd.print("BPM: " + (String)beatsPerMinute + "            ");
+      lcd.print("BPM: " + (String)beatAvg + "            ");
       lcd.setCursor(0,1);
-      lcd.print(bpm_state_message + "     ");
+      lcd.print(bpm_state_message + "        ");
     } else {
       Serial.print(" No finger?");
 
