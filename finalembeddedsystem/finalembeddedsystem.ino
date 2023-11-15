@@ -3,9 +3,19 @@
 #include <Wire.h>
 #include "MAX30105.h"
 #include "heartRate.h"
+#include <Keypad.h>
 
+
+/***************** LCD ********************/
 // Set the LCD address to 0x27 for a 16 chars and 2 line display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+char child_pulse_range[16] = " /75-115 BPM";
+char adult_pulse_range[16] = " /60-100 BPM";
+int child_low = 75;
+int child_high = 115;
+int adult_low = 60;
+int adult_high = 100;
+/***************** LCD ********************/
 
 
 /***************** HEART RATE ********************/
@@ -20,51 +30,8 @@ int beatAvg;
 int hrToLCD = 0;
 /***************** HEART RATE ********************/
 
-void setup()
-{
-  Serial.begin(115200);
 
-  /***************** LCD ********************/
-  // enable_LCD();
-  // Turn on the blacklight
-  // lcd.setBacklight((uint8_t)1);
-  /***************** LCD ********************/
-
-
-  /***************** HEART RATE ********************/
-  enable_HR();
-
-  particleSensor.setup(); //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
-  /***************** HEART RATE ********************/
-}
-
-void enable_HR(){
-  // Initialize sensor
-  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
-  {
-    Serial.println("MAX30105 was not found. Please check wiring/power. ");
-    while (1);
-  }
-  Serial.println("Place your index finger on the sensor with steady pressure.");
-}
-
-void disable_HR(){
-  particleSensor.shutDown();
-}
-
-void enable_LCD(){
-  // initialize the LCD
-  lcd.begin();
-}
-
-void disable_LCD(){
-  // lcd.stop();
-}
-
-#include <Keypad.h>
-
+/***************** KEYPAD ********************/
 const byte ROWS = 4; /* four rows */
 const byte COLS = 4; /* four columns */
 /* define the symbols on the buttons of the keypads */
@@ -74,62 +41,84 @@ char hexaKeys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-
-char age[3] = "aa";
-char child_pulse_range[16] = " /75-115 BPM";
-char adult_pulse_range[16] = " /60-100 BPM";
-
-// byte rowPins[ROWS] = {13, 12, 14, 27}; /* connect to the row pinouts of the keypad */
-// byte colPins[COLS] = {26, 25, 33, 32}; /* connect to the column pinouts of the keypad */
+/* initialize an instance of class NewKeypad */
 byte rowPins[ROWS] = {19, 18, 5, 17}; // GPIO18, GPIO5, GPIO17, GPIO16 connect to the row pins
 byte colPins[COLS] = {16, 4, 0, 2};
+Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
+char age[3] = "aa";
+// char exercise[2] = "a";
+/***************** KEYPAD ********************/
 
 
-/* initialize an instance of class NewKeypad */
-Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
-
+/***************** LOGIC ********************/
 int AGE_SETUP = 1;
-int CHECK_PULSE = 0;
+int PULSE_CHECK = 3;
+int STATE = AGE_SETUP;
+String bpm_state_message = "";
+String bpm_normal = "bpm normal";
+String bpm_low    = "bpm low   ";
+String bpm_high   = "bpm high  ";
+/***************** LOGIC ********************/
 
-void reset_age(char* arr)
+
+/***************** SETUP ********************/
+/***************** SETUP ********************/
+void setup()
 {
-  strcpy(arr, "aa");
+  Serial.begin(115200);
+
+  /******* LCD **********/
+  lcd.begin();
+  // Turn on the blacklight
+  lcd.setBacklight((uint8_t)1);
+  /******* LCD **********/
+
+
+  /********* HEART RATE *********/
+  // Initialize sensor
+  if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
+  {
+    Serial.println("MAX30105 was not found. Please check wiring/power. ");
+    while (1);
+  }
+  Serial.println("Place your index finger on the sensor with steady pressure.");
+
+  particleSensor.setup(); //Configure sensor with default settings
+  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
+  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
+  /********* HEART RATE *********/
+}
+
+void reset_age(char* arr, char* default_value)
+{
+  strcpy(arr, default_value);
 } 
 
 void loop(){
 
-  if (AGE_SETUP == 1){
-  // First row
-  // TODO: Create more meaningful prompt
-  // lcd.print("Enter your age:");
-  Serial.println("Enter your age:");
+  if (STATE == AGE_SETUP){
+    // Prompt for age on LCD
+    lcd.setCursor(0,0);
+    lcd.print("Enter your age:");
+    lcd.setCursor(0,1);
+    lcd.print("Embedded Systems");
 
-  // Second row
-  // lcd.setCursor(0,1);
-  // lcd.print("Embedded Systems");
-  char current_key = customKeypad.getKey();
+    char current_key = customKeypad.getKey();
 
-  if (current_key){
-    if (age[0] != 'a' and age[1] != 'a'){
-      Serial.println((String) "Age is set to: " + age);
-      AGE_SETUP = 0;
-      CHECK_PULSE = 1;
-      // reset_age(age);
-    } else if (age[0] != 'a'){
-      age[1] = current_key;
-    } else {
-      age[0] = current_key;
+    if (current_key){
+      if (age[0] != 'a' and age[1] != 'a'){
+        Serial.println((String) "Age is set to: " + age);
+        STATE = PULSE_CHECK;
+        // reset_age(age, "aa");
+      } else if (age[0] != 'a'){
+        age[1] = current_key;
+      } else {
+        age[0] = current_key;
+      }
     }
   }
-  } else {
-    // lcd.setCursor(0,0);
-    // lcd.print((String) "Age: " + age + "         ");
-    // lcd.setCursor(0,1);
-    // lcd.print("Use HR Sensor.   ");
-    Serial.print((String) "Age: " + age);
-  }
 
-  if (CHECK_PULSE == 1){
+  if (STATE == PULSE_CHECK){
     long irValue = particleSensor.getIR();
 
     if (checkForBeat(irValue) == true)
@@ -153,12 +142,24 @@ void loop(){
       }
       hrToLCD += 1;
     }
-    // if (hrToLCD >= 10) {
-    //   // lcd.setCursor(0,1);
-    //   // lcd.print((String) beatAvg + child_pulse_range);
-    //   Serial.print((String) beatAvg + child_pulse_range);
-    //   hrToLCD = 0;
-    // }
+
+    if ((int)age <= 9){
+      if (beatsPerMinute < child_low){
+        bpm_state_message = bpm_low;
+      } else if (child_low <= beatsPerMinute < child_high) {
+        bpm_state_message = bpm_normal;
+      } else {
+        bpm_state_message = bpm_high;
+      }
+    } else {
+      if (beatsPerMinute < adult_low){
+        bpm_state_message = bpm_low;
+      } else if (adult_low <= beatsPerMinute < adult_high) {
+        bpm_state_message = bpm_normal;
+      } else {
+        bpm_state_message = bpm_high;
+      }
+    }
 
     Serial.print("IR=");
     Serial.print(irValue);
@@ -167,9 +168,19 @@ void loop(){
     Serial.print(", Avg BPM=");
     Serial.print(beatAvg);
 
-    if (irValue < 50000)
+    if (irValue > 50000){
+      lcd.setCursor(0,0);
+      lcd.print("BPM: " + (String)beatsPerMinute + "            ");
+      lcd.setCursor(0,1);
+      lcd.print(bpm_state_message + "     ");
+    } else {
       Serial.print(" No finger?");
 
+      lcd.setCursor(0,0);
+      lcd.print("Put your finger ");
+      lcd.setCursor(0,1);
+      lcd.print("on the HR sensor     ");
+    }
     Serial.println();
   }
   
