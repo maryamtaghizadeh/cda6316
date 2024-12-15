@@ -35,6 +35,7 @@ int lightVal = 0, baseLightVal = 0, pwmVal=0, mapPwmVal=0;
 int tempVal = 0, baseTempVal = 0;
 int distVal = 0, baseDistVal=0, mapDistVal =0;
 int flag=0;
+int lastPosition = 0;
 
 
 // ---------- Main functions 
@@ -96,33 +97,43 @@ void loop()
   distVal = min (distVal, 1000);
   distVal = max (distVal, 250);
   mapDistVal = map (distVal, 250, 1000, 0, 180);  // map values between in range (250, 1010) to values in range (0, 180)
-  myservo.write (mapDistVal);
-
+  // myservo.write (mapDistVal);
+  // Serial.print("WORKING  base value:  "); Serial.print(baseDistVal); Serial.print("WORKING  base value:  "); Serial.print(mapDistVal);   Serial.print("  Dist map value: "); Serial.println(distVal);
   // ********** requirement # 1
   // the code above cuases the servo to sweep from 0-90 as the distVal sweeps from 250-1000 as you vertically move your hand up/down over the distance sensor
   // modify the code so that if you move your hand horizantally quickly the servo stops in its last position
   /* enter your comments here:
   */
 
+  if (mapDistVal > 0 && mapDistVal < 180) {
+    myservo.write (mapDistVal);
+    lastPosition = mapDistVal;
+  } else {
+    myservo.write (lastPosition);
+  }
+  
+
 
   // ---------- light sensor controls
   // read light sensor
   lightVal = analogRead(lightPin);  // light sensor
   // The following two lines designate a deadzone band for the blue led between .2 and .4 of the baseLightVal for no change.
-  if      ((lightVal > (baseLightVal - (0.3 * baseLightVal)))) { digitalWrite(lightLed, HIGH); }  // if val above thresH (20% below room light)
-  else if ((lightVal < (baseLightVal - (0.5 * baseLightVal)))) { digitalWrite(lightLed, LOW);  }  // if val under thresh (40% below room light)
+  if      ((lightVal > (baseLightVal - (0.1 * baseLightVal)))) { digitalWrite(lightLed, HIGH); }  // if val above thresH (20% below room light)
+  else if ((lightVal < (baseLightVal - (0.9 * baseLightVal)))) { digitalWrite(lightLed, LOW);  }  // if val under thresh (40% below room light)
   // observe when the blue led turns off and on as you move your finger up and down above the light sensor
 
   // ********** requirement #2
   // change the code above to expand the range from 0.3-0.5 to the max and explore the changes. 
   /* enter your comments here:
+
+
   */
 
   // ---------- pwm controls for the yellow led, where led dims from 100% to 0% based on the light value
   pwmVal =lightVal;                         // copy the light val
   pwmVal = min(pwmVal, baseLightVal);  // allow pwmVal value to be max at room light
   pwmVal = max(pwmVal, 100);            // allow pwmVal value to be min is 10
-  mapPwmVal = map(pwmVal, 100, baseLightVal, 10, 245);
+  mapPwmVal = map(pwmVal, 100, baseLightVal, 245, 10);
   analogWrite(lightPwmLed, mapPwmVal);
 
   // ********** requirement #3
@@ -134,8 +145,16 @@ void loop()
   // ---------- touch sensor controls
   // read the touch sensor, and if touched, turn on the green led, when no touch turn led off
   touchVal = analogRead(touchPin);
-  if (touchVal < (900)          ) { digitalWrite(touchLed, HIGH); }              // if touched
-  else                            { digitalWrite(touchLed, LOW);  }
+  if (touchVal < (900)          ) { 
+    if (flag == 1) {flag = 0;}
+    else {flag = 1;}
+  }
+  if (flag == 1) {
+    digitalWrite(touchLed, HIGH); 
+  } else {
+    digitalWrite(touchLed, LOW); 
+  }
+  
 
   // ********** requirement #4
   // the code above uses an absolute value to detect touching which may not be suitable for your skin
@@ -154,7 +173,7 @@ void loop()
   // you can increase the sensor temo by touching/sqweezing it between your thinp and index fingure
   tempVal = analogRead(tempPin);  // tmp sensor
   if (tempVal > 1.05 * baseTempVal) { digitalWrite(tempLed, HIGH);  } 
-  else                              { digitalWrite(tempLed, LOW);   }
+  else if (tempVal <= baseTempVal)   { digitalWrite(tempLed, LOW);   }
   // if you have skin temperature that is less than the room basline temp, the led will not turn on
   // in this case you need to change the code so that if the temperature is higher/lower than the baseline, the led will turn on
 
@@ -166,10 +185,10 @@ void loop()
 
 
   // ---------- printing on serial monitor
-  Serial.print("Dist  base value:  "); Serial.print(baseDistVal);   Serial.print("  Dist map value: "); Serial.println(distVal);
-  Serial.print("light base value:  "); Serial.print(baseLightVal);  Serial.print("  light  Reading: "); Serial.println(lightVal); 
-  Serial.print("light  PWD Value:  "); Serial.print(pwmVal);        Serial.print("  map  PWD Value: "); Serial.println(mapPwmVal);
-  Serial.print("Touch base value: "); Serial.print(baseTouchVal);   Serial.print("  Touch  Reading: "); Serial.println(touchVal);
+
+  // Serial.print("light base value:  "); Serial.print(baseLightVal);  Serial.print("  light  Reading: "); Serial.println(lightVal); 
+  // Serial.print("light  PWD Value:  "); Serial.print(pwmVal);        Serial.print("  map  PWD Value: "); Serial.println(mapPwmVal);
+  // Serial.print("Touch base value: "); Serial.print(baseTouchVal);Serial.print(flag);   Serial.print("  Touch  Reading: "); Serial.println(touchVal);
   Serial.print("Temp  base value:  "); Serial.print(baseTempVal);   Serial.print("  Temp   Reading: "); Serial.println(tempVal);
 
 
